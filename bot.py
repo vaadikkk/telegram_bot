@@ -1,25 +1,29 @@
-# --- PATCH: restore imghdr for python 3.13 compatibility ---
-import types, sys
-sys.modules['imghdr'] = types.SimpleNamespace(what=lambda *a, **kw: None)
-# --- END PATCH ---
-
-from telegram.ext import Updater, CommandHandler
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import os
 
-# Берем токен из переменных окружения Render
-TOKEN = os.environ.get("BOT_TOKEN")
+# Получаем токен из переменной окружения Render
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-def start(update, context):
-    update.message.reply_text("Привет! Я работаю 24/7 на Render 🚀")
+# Команда /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("👋 Привет! Я современный Telegram-бот на версии 21.x 🚀")
 
-def help_command(update, context):
-    update.message.reply_text("Напиши /start, чтобы проверить, что я онлайн.")
+# Любой другой текст
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Ты сказал: {update.message.text}")
 
-updater = Updater(TOKEN, use_context=True)
-dp = updater.dispatcher
+# Основная функция запуска
+def main():
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-dp.add_handler(CommandHandler("start", start))
-dp.add_handler(CommandHandler("help", help_command))
+    # Команда /start
+    app.add_handler(CommandHandler("start", start))
+    # Ответ на любые сообщения
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-updater.start_polling()
-updater.idle()
+    print("✅ Бот запущен и работает 24/7...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
