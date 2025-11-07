@@ -1,37 +1,49 @@
-import threading
-import http.server
-import socketserver
 import os
+import threading
+import requests
+from flask import Flask
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+# === Настройки ===
+TOKEN = os.environ.get("BOT_TOKEN")
+if not TOKEN:
+    raise ValueError("❌ Переменная BOT_TOKEN не найдена в Environment Variables!")
 
-# 1️⃣ Функция для фиктивного HTTP-сервера
-def fake_server():
-    port = int(os.environ.get("PORT", 10000))  # Render передаёт порт сюда
-    handler = http.server.SimpleHTTPRequestHandler
-    with socketserver.TCPServer(("", port), handler) as httpd:
-        print(f"🌐 Fake server running on port {port}")
-        httpd.serve_forever()
+# === Flask сервер ===
+web_app = Flask(__name__)
 
-# 2️⃣ Запускаем fake-server в отдельном потоке
-threading.Thread(target=fake_server, daemon=True).start()
+@web_app.route("/")
+def home():
+    return "✅ Telegram bot is alive and responding", 200
 
-# 3️⃣ Основной код Telegram-бота
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    web_app.run(host="0.0.0.0", port=port)
+
+# === Telegram бот ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Привет! Я живу на Render и слушаю fake port 🌐")
+    await update.message.reply_text("👋 Привет! Я современный Telegram-бот на Render 🚀")
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"Ты сказал: {update.message.text}")
-
-def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+def run_bot():
+    app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+    print("🤖 Бот запущен и слушает Telegram...")
+    app.run_polling(allowed_updates=Update.ALL_TYPES)
 
-    print("✅ Telegram-бот запущен и работает в фоновом режиме...")
-    app.run_polling()
+# === Периодический self-ping, чтобы Render не засыпал ===
+def self_ping():
+    url = "https://telegram-bot-gvyt.onrender.com"
+    while True:
+        try:
+            requests.get(url)
+            print("🔄 Self-ping:", url)
+        except Exception as e:
+            print("⚠️ Self-ping error:", e)
+        import time; time.sleep(600)  # каждые 10 минут
 
+# === Запуск всех потоков ===
 if __name__ == "__main__":
-    main()
+    threading.Thread(target=run_web).start()
+    threading.Thread(target=self_ping).start()
+    run_bot()
