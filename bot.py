@@ -1,3 +1,8 @@
+# --- PATCH: restore imghdr for python 3.13 compatibility ---
+import types, sys
+sys.modules['imghdr'] = types.SimpleNamespace(what=lambda *a, **kw: None)
+# --- END PATCH ---
+
 from telegram.ext import Updater, CommandHandler
 import os
 
