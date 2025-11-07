@@ -2,7 +2,7 @@ from telegram.ext import Updater, CommandHandler
 import os
 
 # Берем токен из переменных окружения Render
-TOKEN = os.environ.get("8520596263:AAG_XqPj_Kv-mVZcUZ2XT4pEX0AZVfAOk7U")
+TOKEN = os.environ.get("BOT_TOKEN")
 
 def start(update, context):
     update.message.reply_text("Привет! Я работаю 24/7 на Render 🚀")
